@@ -74,7 +74,7 @@ editor_cmd = terminal .. " -e " .. editor
 modkey = "Mod4"
 
 -- Браузер
-browser = "firefox"
+browser = "google-chrome-stable"
 
 -- Файловый менеджер
 filemanager = "thunar"
@@ -117,10 +117,10 @@ month_calendar:attach(mytextclock, "tr")
 -- G) TAGS (РАБОЧИЕ СТОЛЫ)
 -- ══════════════════════════════════════════════════════════════
 
--- Создаём 9 рабочих столов на каждом мониторе
+-- Создаём 4 рабочих стола на каждом мониторе
 awful.screen.connect_for_each_screen(function(s)
-    -- Каждый экран получает теги с именами 1-9
-    awful.tag({ "1", "2", "3", "4", "5", "6", "7", "8", "9" }, s, awful.layout.layouts[1])
+    -- Каждый экран получает теги с именами 1-4, по умолчанию плавающий режим
+    awful.tag({ "1", "2", "3", "4" }, s, awful.layout.layouts[7])
 end)
 
 -- ══════════════════════════════════════════════════════════════
@@ -167,6 +167,43 @@ awful.screen.connect_for_each_screen(function(s)
     -- Создаём виджет layoutbox для переключения раскладок
     s.mylayoutbox = awful.widget.layoutbox(s)
     s.mylayoutbox:buttons(gears.table.join(
+        awful.button({ }, 1, function() awful.layout.inc(1) end),
+        awful.button({ }, 3, function() awful.layout.inc(-1) end),
+        awful.button({ }, 4, function() awful.layout.inc(1) end),
+        awful.button({ }, 5, function() awful.layout.inc(-1) end)
+    ))
+    
+    -- Создаём текстовый виджет для отображения названия раскладки
+    local layout_names = {
+        [awful.layout.suit.tile] = "Тайлинг",
+        [awful.layout.suit.tile.left] = "Тайлинг←",
+        [awful.layout.suit.tile.bottom] = "Тайлинг↓",
+        [awful.layout.suit.tile.top] = "Тайлинг↑",
+        [awful.layout.suit.fair] = "Равномерно",
+        [awful.layout.suit.max] = "Максимум",
+        [awful.layout.suit.floating] = "Плавающий",
+        [awful.layout.suit.spiral.dwindle] = "Спираль",
+    }
+    
+    s.mylayouttext = wibox.widget{
+        widget = wibox.widget.textbox,
+        align = "center",
+    }
+    
+    -- Функция обновления текста раскладки
+    local function update_layout_text()
+        local layout = awful.layout.get(s)
+        local name = layout_names[layout] or "Неизвестно"
+        s.mylayouttext.text = " " .. name .. " "
+    end
+    
+    -- Обновляем текст при изменении раскладки
+    awful.tag.attached_connect_signal(s, "property::selected", update_layout_text)
+    awful.tag.attached_connect_signal(s, "property::layout", update_layout_text)
+    update_layout_text()
+    
+    -- Добавляем кнопки для переключения раскладки
+    s.mylayouttext:buttons(gears.table.join(
         awful.button({ }, 1, function() awful.layout.inc(1) end),
         awful.button({ }, 3, function() awful.layout.inc(-1) end),
         awful.button({ }, 4, function() awful.layout.inc(1) end),
@@ -235,6 +272,7 @@ awful.screen.connect_for_each_screen(function(s)
             layout = wibox.layout.fixed.horizontal,
             wibox.widget.systray(),
             mytextclock,
+            s.mylayouttext,
             s.mylayoutbox,
         },
     }
@@ -296,13 +334,6 @@ globalkeys = gears.table.join(
     awful.key({ modkey }, "l", function() awful.tag.incmwfact(0.05) end,
               {description = "увеличить ширину мастер-области", group = "layout"}),
 
-    -- ═══ УПРАВЛЕНИЕ РАСКЛАДКАМИ ═══
-    awful.key({ modkey }, "space", function() awful.layout.inc(1) end,
-              {description = "следующая раскладка", group = "layout"}),
-    
-    awful.key({ modkey, "Shift" }, "space", function() awful.layout.inc(-1) end,
-              {description = "предыдущая раскладка", group = "layout"}),
-
     -- ═══ ВОССТАНОВЛЕНИЕ МИНИМИЗИРОВАННЫХ ОКОН ═══
     awful.key({ modkey, "Control" }, "n",
               function()
@@ -357,7 +388,7 @@ clientkeys = gears.table.join(
 )
 
 -- Привязка горячих клавиш для переключения между рабочими столами (тегами)
-for i = 1, 9 do
+for i = 1, 4 do
     globalkeys = gears.table.join(globalkeys,
         -- Переключиться на рабочий стол i
         awful.key({ modkey }, "#" .. i + 9,
