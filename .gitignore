@@ -1,0 +1,2 @@
+# Exclude README.md from being downloaded by yadm/git
+README.md
